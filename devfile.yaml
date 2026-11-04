@@ -1,0 +1,77 @@
+
+schemaVersion: 2.2.0
+
+metadata:
+  name: dastor-vm101
+  displayName: DaSTOR OpenShift Virtualization 101
+  description: OpenShift Virtualization hands-on lab workspace
+
+components:
+  - name: tools
+    container:
+      image: registry.redhat.io/devspaces/udi-rhel9:3.22-1753388504
+      mountSources: true
+      memoryRequest: 512Mi
+      memoryLimit: 2Gi
+      cpuRequest: 100m
+      cpuLimit: 1000m
+      env:
+        - name: PATH
+          value: /home/user/.local/bin:/usr/local/bin:/usr/bin:/bin
+      volumeMounts:
+        - name: cli-tools
+          path: /home/user/.local/bin
+
+  - name: cli-tools
+    volume:
+      size: 1Gi
+
+commands:
+  - id: verify-tools
+    exec:
+      component: tools
+      label: Verify VM Lab Tools
+      commandLine: |
+        echo "DaSTOR VM 101 - Tool Verification"
+        for tool in oc kubectl virtctl curl jq git bash; do
+          if command -v "$tool" >/dev/null 2>&1; then
+            echo "[OK] $tool"
+          else
+            echo "[MISSING] $tool"
+          fi
+        done
+
+  - id: verify-cluster
+    exec:
+      component: tools
+      label: Verify OpenShift Access
+      commandLine: |
+        oc whoami
+        oc version
+        oc get storageclass
+        oc auth can-i create virtualmachines.kubevirt.io
+
+  - id: list-vms
+    exec:
+      component: tools
+      label: List Virtual Machines
+      commandLine: |
+        oc get vm -A
+
+  - id: list-storage
+    exec:
+      component: tools
+      label: List Storage Classes
+      commandLine: |
+        oc get storageclass
+
+  - id: lab-status
+    exec:
+      component: tools
+      label: Check VM Lab
+      commandLine: |
+        oc get vm,vmi,pod,pvc,dv
+
+events:
+  postStart:
+    - verify-tools
